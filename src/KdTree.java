@@ -174,9 +174,9 @@ public class KdTree {
 
     private void nearestSearch(Point2D query, double qx, double qy, Node itr, double champdist) {
         if (itr == null) return;
-        if (query.distanceTo(itr.point) < champdist) {
+        if (query.distanceSquaredTo(itr.point) < champdist) {
             champ = itr.point;
-            champdist = query.distanceTo(champ);
+            champdist = query.distanceSquaredTo(champ);
         }
         if (itr.level % 2 == 0) {
             if (qx < itr.point.x()) {//on the left side
