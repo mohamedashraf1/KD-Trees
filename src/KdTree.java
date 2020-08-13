@@ -107,34 +107,18 @@ public class KdTree {
         drawPointsRecursive(itr.right);
     }
 
-    private void drawLinesRecursive(Node itr, Node itrParent, double xMin, double yMin, double xMax, double yMax) {
+    private void drawLinesRecursive(Node itr) {
         if (itr == null)
             return;
         if (itr.level % 2 == 0) {
             StdDraw.setPenColor(StdDraw.RED);
-            if (itrParent == null) {// for root
-                StdDraw.line(itr.point.x(), 0, itr.point.x(), 1);
-            } else {
-                if (itr.point.y() < itrParent.point.y()) { //down
-                    StdDraw.line(itr.point.x(), yMin, itr.point.x(), itrParent.point.y());
-                    yMax = itrParent.point.y();
-                } else {// up
-                    StdDraw.line(itr.point.x(), itrParent.point.y(), itr.point.x(), yMax);
-                    yMin = itrParent.point.y();
-                }
-            }
+            StdDraw.line(itr.point.x(), itr.rect.ymin(), itr.point.x(), itr.rect.ymax());
         } else {
             StdDraw.setPenColor(StdDraw.BLUE);
-            if (itr.point.x() < itrParent.point.x()) {//left
-                StdDraw.line(xMin, itr.point.y(), itrParent.point.x(), itr.point.y());
-                xMax = itrParent.point.x();
-            } else {// right
-                StdDraw.line(itrParent.point.x(), itr.point.y(), xMax, itr.point.y());
-                xMin = itrParent.point.x();
-            }
+            StdDraw.line(itr.rect.xmin(), itr.point.y(), itr.rect.xmax(), itr.point.y());
         }
-        drawLinesRecursive(itr.left, itr, xMin, yMin, xMax, yMax);
-        drawLinesRecursive(itr.right, itr, xMin, yMin, xMax, yMax);
+        drawLinesRecursive(itr.left);
+        drawLinesRecursive(itr.right);
     }
 
     // draw all points to standard draw
@@ -143,7 +127,7 @@ public class KdTree {
         StdDraw.setPenRadius(0.01);
         drawPointsRecursive(root);
         StdDraw.setPenRadius(0.002);
-        drawLinesRecursive(root, null, 0, 0, 1, 1);
+        drawLinesRecursive(root);
         StdDraw.show();
     }
 
