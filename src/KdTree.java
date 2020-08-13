@@ -1,12 +1,11 @@
 import edu.princeton.cs.algs4.Point2D;
 import edu.princeton.cs.algs4.RectHV;
+import edu.princeton.cs.algs4.Stack;
 import edu.princeton.cs.algs4.StdDraw;
-
-import java.util.Stack;
 
 public class KdTree {
     private Node root;
-
+    private Point2D champ;
 
     private static class Node {
         Node left, right;
@@ -38,19 +37,19 @@ public class KdTree {
         return root.size;
     }
 
-    private Node put(Node itr, Point2D p, int level) {
+    private Node put(Node itr, Point2D p, double px, double py, int level) {
         if (itr == null) return new Node(null, null, p, level + 1, 1);
         if (itr.level % 2 == 0) { // for the even level(vertical)
-            if (p.x() < itr.point.x()) {
-                itr.left = put(itr.left, p, itr.level);
+            if (px < itr.point.x()) {
+                itr.left = put(itr.left, p, px, py, itr.level);
             } else {
-                itr.right = put(itr.right, p, itr.level);
+                itr.right = put(itr.right, p, px, py, itr.level);
             }
         } else { // for the odd level(horizontal)
-            if (p.y() < itr.point.y())
-                itr.left = put(itr.left, p, itr.level);
+            if (py < itr.point.y())
+                itr.left = put(itr.left, p, px, py, itr.level);
             else
-                itr.right = put(itr.right, p, itr.level);
+                itr.right = put(itr.right, p, px, py, itr.level);
         }
         itr.size = itr.size + 1;
         return itr;
@@ -64,23 +63,27 @@ public class KdTree {
             root = new Node(null, null, p, 0, 1);
             return;
         }
-        root = put(root, p, root.level);
+        if (contains(p))
+            return;
+        root = put(root, p, p.x(), p.y(), root.level);
     }
 
     // does the Tree contain point p?
     public boolean contains(Point2D p) {
         if (p == null)
             throw new IllegalArgumentException();
+        double px = p.x();
+        double py = p.y();
         Node itr = root;
         while (itr != null) {
             if (itr.level % 2 == 0) {
-                if (p.x() < itr.point.x()) itr = itr.left;
-                else if (p.x() > itr.point.x()) itr = itr.right;
-                else if (p.equals(itr.point)) return true;
+                if (p.equals(itr.point)) return true;
+                else if (px < itr.point.x()) itr = itr.left;
+                else itr = itr.right;
             } else {
-                if (p.y() < itr.point.y()) itr = itr.left;
-                else if (p.y() > itr.point.y()) itr = itr.right;
-                else if (p.equals(itr.point)) return true;
+                if (p.equals(itr.point)) return true;
+                else if (py < itr.point.y()) itr = itr.left;
+                else itr = itr.right;
             }
         }
         return false;
@@ -127,7 +130,9 @@ public class KdTree {
     // draw all points to standard draw
     public void draw() {
         StdDraw.enableDoubleBuffering();
+        StdDraw.setPenRadius(0.01);
         drawPointsRecursive(root);
+        StdDraw.setPenRadius(0.002);
         drawLinesRecursive(root, null, 0, 0, 1, 1);
         StdDraw.show();
     }
@@ -167,39 +172,41 @@ public class KdTree {
         return points;
     }
 
-    private void nearestSearch(Point2D query, Node itr) {
+    private void nearestSearch(Point2D query, double qx, double qy, Node itr, double champdist) {
         if (itr == null) return;
-        if (query.distanceTo(itr.point) < query.distanceTo(champ)) {
+        if (query.distanceTo(itr.point) < champdist) {
             champ = itr.point;
+            champdist = query.distanceTo(champ);
         }
         if (itr.level % 2 == 0) {
-            if (query.x() < itr.point.x()) {//on the left side
-                nearestSearch(query, itr.left);
+            if (qx < itr.point.x()) {//on the left side
+                nearestSearch(query, qx, qy, itr.left, champdist);
                 if (!champ.equals(itr.point))
-                    nearestSearch(query, itr.right);
+                    nearestSearch(query, qx, qy, itr.right, champdist);
             } else {
-                nearestSearch(query, itr.right);
+                nearestSearch(query, qx, qy, itr.right, champdist);
                 if (!champ.equals(itr.point))
-                    nearestSearch(query, itr.left);
+                    nearestSearch(query, qx, qy, itr.left, champdist);
             }
         } else {
-            if (query.y() < itr.point.y()) {
-                nearestSearch(query, itr.left);
-                nearestSearch(query, itr.right);
+            if (qy < itr.point.y()) {
+                nearestSearch(query, qx, qy, itr.left, champdist);
+                nearestSearch(query, qx, qy, itr.right, champdist);
             } else {
-                nearestSearch(query, itr.right);
-                nearestSearch(query, itr.left);
+                nearestSearch(query, qx, qy, itr.right, champdist);
+                nearestSearch(query, qx, qy, itr.left, champdist);
             }
         }
 
     }
 
-    private Point2D champ;
 
     // a nearest neighbor in the Tree to point p; null if the set is empty
     public Point2D nearest(Point2D p) {
+        if (p == null)
+            throw new IllegalArgumentException();
         champ = new Point2D(Integer.MAX_VALUE, Integer.MAX_VALUE);
-        nearestSearch(p, root);
+        nearestSearch(p, p.x(), p.y(), root, p.distanceSquaredTo(champ));
         return champ;
     }
 
@@ -222,7 +229,9 @@ public class KdTree {
         Point2D query = new Point2D(0, 0);
         System.out.println(test.nearest(query).toString());
         System.out.println(test.contains(query));
+        System.out.println(test.size());
         test.draw();
+
     }
 }
 
